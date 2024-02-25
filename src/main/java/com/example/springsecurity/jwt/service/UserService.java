@@ -17,14 +17,17 @@ import java.time.Instant;
 public class UserService {
     private final Logger log = LoggerFactory.getLogger(UserService.class);
 
-    @Autowired
-    UserRepository userRepository;
+    private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
 
-    @Autowired
-    PasswordEncoder passwordEncoder;
+    private final UserAuthorityRepository userAuthorityRepository;
 
-    @Autowired
-    UserAuthorityRepository userAuthorityRepository;
+
+    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder, UserAuthorityRepository userAuthorityRepository) {
+        this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
+        this.userAuthorityRepository = userAuthorityRepository;
+    }
 
     public ReturnMessage registerUser(UserDao userDto) {
 
@@ -53,13 +56,16 @@ public class UserService {
         user = userRepository.save(user);
         if (user.getId() != null) {
             User finalUser = user;
-            userDto.getUserAuthoryties().forEach(userAuthority -> {
-                userAuthority.setUser(finalUser);
-                userAuthorityRepository.save(userAuthority);
-            });
+            userDto.getUserAuthoryties()
+                    .forEach(userAuthoryty -> {
+                        userAuthoryty.setUser(finalUser);
+
+                        userAuthorityRepository.save(userAuthoryty);
+                    });
+
             ret.setId(1);
         }
         return ret;
     }
-
 }
+

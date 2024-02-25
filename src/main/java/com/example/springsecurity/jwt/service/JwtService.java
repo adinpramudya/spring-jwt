@@ -32,14 +32,10 @@ public class JwtService {
         return claimsResolver.apply(claims);
     }
 
-    public String generateToken(UserDetails userDetails) {
-        Collection<? extends GrantedAuthority> authorities = userDetails.getAuthorities();
-        List<String> roles = authorities.stream()
-                .map(GrantedAuthority::getAuthority)
-                .collect(Collectors.toList());
+    public String generateToken(UserDetails  userDetails) {
 
         Map<String, Object> externalClaims = new HashMap<>();
-        externalClaims.put("roles", roles);
+        externalClaims.put("roles", userDetails.getAuthorities());
 
         return generateToken(externalClaims, userDetails);
     }

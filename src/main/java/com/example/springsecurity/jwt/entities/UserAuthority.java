@@ -24,20 +24,7 @@ public class UserAuthority implements Serializable {
     private UserAuthorityType name;
 
     @ManyToOne
-    @JoinColumn(name = "user_id" )
+    @JoinColumn(name = "user_id")
     private User user;
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 }

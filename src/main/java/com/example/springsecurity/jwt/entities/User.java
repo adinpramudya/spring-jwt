@@ -57,6 +57,4 @@ public class User implements Serializable {
     @JsonIgnore
     @OneToMany(mappedBy = "user", fetch = FetchType.EAGER, cascade = CascadeType.REMOVE)
     private Set<UserAuthority> userAuthorities;
-
-
 }

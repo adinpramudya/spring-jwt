@@ -12,28 +12,33 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
-@EqualsAndHashCode
-@ToString
+
 public class SecurityUser implements UserDetails {
 
     private static final long serialVersionUID = -6690946490872875352L;
 
-    @Autowired
-    User user;
+    private final User user;
+    public SecurityUser(User user) {
+        this.user = user;
+    }
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        if (user.getUserAuthorities() == null || user.getUserAuthorities().isEmpty()) {
-            return Collections.emptyList();
-        }
 
-        return user.getUserAuthorities().stream()
-                .map(authority -> new SimpleGrantedAuthority(authority.getName().toString()))
-                .collect(Collectors.toList());
+        if(user.getUserAuthorities().isEmpty() || user.getUserAuthorities() == null ) {
+            return null;
+        }
+        List<GrantedAuthority> grantedAuthorities = new ArrayList<>();
+        user.getUserAuthorities().stream().map(UserAuthority::getName).toList()
+                .forEach(a -> {
+                    GrantedAuthority authority = a::toString;
+                    grantedAuthorities.add(authority);
+
+                });
+
+        return grantedAuthorities;
     }
+
     @Override
     public String getPassword() {
         return user.getPasswordHash();
@@ -63,14 +68,7 @@ public class SecurityUser implements UserDetails {
     public boolean isEnabled() {
         return true;
     }
-
 }
-
-
-
-
-
-
 
 
 

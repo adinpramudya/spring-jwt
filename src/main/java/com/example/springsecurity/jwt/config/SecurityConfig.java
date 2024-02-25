@@ -22,10 +22,16 @@ import java.util.Arrays;
 @EnableWebSecurity
 @EnableMethodSecurity
 public class SecurityConfig {
-    @Autowired
-    JwtAuthenticationFilter jwtAuthenticationFilter;
-    @Autowired
-    AuthenticationProvider authenticationProvider;
+
+    private final JwtAuthenticationFilter jwtAuthFilter;
+    private final AuthenticationProvider authenticationProvider;
+    public SecurityConfig(
+            JwtAuthenticationFilter jwtAuthFilter,
+            AuthenticationProvider authenticationProvider
+    ) {
+        this.jwtAuthFilter =jwtAuthFilter;
+        this.authenticationProvider = authenticationProvider;
+    }
 
     @Bean
     CorsConfigurationSource corsConfigurationSource() {
@@ -46,14 +52,12 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(AbstractHttpConfigurer::disable)
                 .authenticationProvider(authenticationProvider)
-                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
                 .authorizeHttpRequests((auth) -> {
                     auth
                             .requestMatchers( "/api/v1/auth/authenticate").permitAll()
                             .requestMatchers( "/api/v1/auth/register").permitAll()
-                            .requestMatchers( "/api/v1/auth/user").permitAll()
-                            .requestMatchers( "/api/v1/auth/user/**").permitAll()
-                            .requestMatchers( "/api/v1/hello/users").hasAnyAuthority("USER")
+                            .requestMatchers("/api/v1/hello").hasAnyAuthority("USER")
                             .anyRequest().authenticated();
                 })
 
@@ -61,4 +65,6 @@ public class SecurityConfig {
 
         return http.build();
     }
+
+
 }

@@ -8,6 +8,7 @@ import com.example.springsecurity.jwt.entities.SecurityUser;
 import com.example.springsecurity.jwt.entities.User;
 import com.example.springsecurity.jwt.entities.UserAuthority;
 import com.example.springsecurity.jwt.entities.enumaration.UserAuthorityType;
+import com.example.springsecurity.jwt.repository.UserAuthorityRepository;
 import com.example.springsecurity.jwt.repository.UserRepository;
 import com.example.springsecurity.jwt.service.JwtService;
 import com.example.springsecurity.jwt.service.UserService;
@@ -16,6 +17,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -24,6 +26,8 @@ import org.springframework.web.bind.annotation.*;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
@@ -31,30 +35,24 @@ import java.util.Set;
 @RequestMapping("/api/v1/auth")
 public class UserController {
     private final Logger log = LoggerFactory.getLogger(UserController.class);
+    private final UserRepository userRepository;
+    private final UserAuthorityRepository userAuthorityRepository;
+    private final UserService userService;
+    private final JwtService jwtService;
+    private final AuthenticationManager authenticationManager;
 
-    @Autowired
-    UserRepository userRepository;
-
-    @Autowired
-    UserService userService;
-
-    @Autowired
-    JwtService jwtService;
-
-    @Autowired
-    AuthenticationProvider authenticationProvider;
+    public UserController(UserRepository userRepository, UserService userServic, JwtService jwtService, AuthenticationManager authenticationManager, UserAuthorityRepository userAuthorityRepository) {
+        this.userRepository = userRepository;
+        this.userAuthorityRepository =userAuthorityRepository;
+        this.userService = userServic;
+        this.jwtService = jwtService;
+        this.authenticationManager = authenticationManager;
+    }
 
     @GetMapping("/user/{login}")
     public ResponseEntity<User> findUserByLogin(@PathVariable String login) {
-        log.debug("LOGIN USER: {}", login);
         Optional<User> user = userRepository.findUserByLogin(login);
         return ResponseEntity.ok().body(user.get());
-
-    }
-    @GetMapping("/user")
-    public ResponseEntity<String> findUser() {
-        log.debug("LOGIN USER: {}", "Masuk");
-        return ResponseEntity.ok().body("Masuk");
 
     }
 
@@ -77,9 +75,9 @@ public class UserController {
             return  ResponseEntity.badRequest().body(ret);
         }
 
-        UserAuthority userAuthority = new UserAuthority();
-        userAuthority.setName(UserAuthorityType.USER);
-        Set<UserAuthority> userAuthorytySet  = Set.of(userAuthority);
+        UserAuthority userAuthoryty = new UserAuthority();
+        userAuthoryty.setName(UserAuthorityType.USER);
+        Set<UserAuthority>  userAuthorytySet  = Set.of(userAuthoryty);
         userDao.setUserAuthoryties(userAuthorytySet);
 
         ret = this.userService.registerUser(userDao);
@@ -92,15 +90,23 @@ public class UserController {
             @Valid @RequestBody AuthenticationReq request
     ) {
         log.debug("LOGIN REQUSET, {}", request.getEmail());
-        authenticationProvider.authenticate(
+        authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
                         request.getEmail(),
                         request.getPassword()
                 )
         );
         User user = userRepository.findUserByLoginIgnoreCase(request.getEmail()).orElseThrow();
-        log.debug("USER REQUSET, {}", user);
+        if(user.getUserAuthorities().isEmpty() || user.getUserAuthorities() == null){
+            List<UserAuthority> userAuthoritiesList = userAuthorityRepository.findUserAuthorytiesByUserId(user.getId());
+            Set<UserAuthority> userAuthoritiesSet = new HashSet<>();
+            if (userAuthoritiesList != null) {
+                userAuthoritiesSet.addAll(userAuthoritiesList);
+            }
+            user.setUserAuthorities(userAuthoritiesSet);
 
+
+        }
         UserDetails userDetails = new SecurityUser(user);
         String jwtToken =  jwtService.generateToken(userDetails);
         String refreshToken = jwtService.generateRefreshToken(userDetails);
@@ -110,6 +116,5 @@ public class UserController {
         res.setRefreshToken(refreshToken);
         return ResponseEntity.ok().body(res);
     }
-
 }
 

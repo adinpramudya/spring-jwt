@@ -13,12 +13,15 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 @Configuration
 public class ApplicationConfig {
 
-    @Autowired
-    private DomainUserDetailService domainUserDetailService;
+    private final DomainUserDetailService domainUserDetailService;
+
+    public ApplicationConfig(DomainUserDetailService domainUserDetailService) {
+        this.domainUserDetailService = domainUserDetailService;
+    }
 
     @Bean
     public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
+        return  new BCryptPasswordEncoder();
     }
 
     @Bean

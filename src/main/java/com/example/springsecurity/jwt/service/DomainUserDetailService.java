@@ -18,30 +18,40 @@ import java.util.stream.Collectors;
 
 @Component
 public class DomainUserDetailService implements UserDetailsService {
-
     private final Logger log = LoggerFactory.getLogger(DomainUserDetailService.class);
 
-    @Autowired
-    UserRepository userRepository;
+    private final UserRepository userRepository;
 
 
+    public DomainUserDetailService(UserRepository userRepository) {
+        this.userRepository = userRepository;
+    }
 
     @Override
     @Transactional
-    public UserDetails loadUserByUsername(String login) throws UsernameNotFoundException {
-        log.debug("Authentication by, {}", login);
+    public UserDetails loadUserByUsername(String login) {
+        log.debug("Authenticating by, {}", login);
 
-        return  userRepository.findUserByLogin(login).map(user -> {
-            if(!user.getIsActive().equals(true)){
-                throw new UsernameNotFoundException("User with login: "+login+"was not activeted");
-            }
 
-            List<GrantedAuthority> grantedAuthorities = user.getUserAuthorities()
-                    .stream()
-                    .map(authority -> new SimpleGrantedAuthority(authority.getName().toString()))
-                    .collect(Collectors.toList());
+        return userRepository.findUserByLogin(login)
+                .map(user -> {
 
-            return new User(user.getLogin(), user.getPasswordHash(), grantedAuthorities);
-        }).orElseThrow(() -> new UsernameNotFoundException("User: " + login + "not found"));
+                    if (!user.getIsActive().equals(true)) {
+                        throw new UsernameNotFoundException("User with login: " + login + " was not activated");
+                    }
+
+                    List<GrantedAuthority> grantedAuthorities = user
+                            .getUserAuthorities()
+                            .stream()
+                            .map(authority -> new SimpleGrantedAuthority(authority.getName().toString()))
+                            .collect(Collectors.toList());
+
+                    return new User(user.getLogin(), user.getPasswordHash(), grantedAuthorities);
+                })
+                .orElseThrow(() -> new UsernameNotFoundException("User: " + login + "not found"));
+
+
     }
+
+
 }
