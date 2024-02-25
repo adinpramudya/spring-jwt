@@ -1,0 +1,1 @@
+INSERT INTO hr_user(id, login, email, password_hash, first_name, last_name, created_date, created_by) VALUES (1, 'admin@localhost.com', 'admin@localhost.com', '$2a$12$tBB6rJ3q3JySbFWJHao5nuFGU/33TE34XGlSmd3Q1Kw7iZgVzM9Z.', 'Admin', 'Localhost', now(), 'admin@localhost.com');
